@@ -141,7 +141,7 @@ protected  //Eventos del compilador
   function FindVar(const varName: string; out idx: integer): boolean;
   function FindCons(const conName: string; out idx: integer): boolean;
   function FindFunc(const funName: string; out idx: integer): boolean;
-  function FindPredefName(name: string): TxpElemType;
+  function FindPredefName(name: string): TIdentifType;
   function GetOperand: TOperand; virtual;
   function GetOperandP(pre: integer): TOperand;
   procedure CaptureParams; virtual;
@@ -161,7 +161,6 @@ public
   cons  : TxpCons;  //lista de constantes
   vars  : TxpVars;  //lista de variables
   funcs : TxpFuns;  //lista de funciones
-  TreeElems: TXpTreeElements; //tablas de elementos del lenguaje
 public  //Manejo de errores
   PErr  : TPError;     //Objeto de Error
   function HayError: boolean;
@@ -259,7 +258,7 @@ begin
   Result := false;
   tmp := upCase(varName);
   for i:=0 to vars.Count-1 do begin
-    if Upcase(vars[i].name)=tmp then begin
+    if Upcase(vars[i].nom)=tmp then begin
       idx := i;
       exit(true);
     end;
@@ -297,25 +296,25 @@ begin
     end;
   end;
 end;
-function TCompilerBase.FindPredefName(name: string): TxpElemType;
+function TCompilerBase.FindPredefName(name: string): TIdentifType;
 //Busca un identificador e indica si ya existe el nombre, sea como variable,
 //función o constante.
 var i: integer;
 begin
   //busca como variable
   if FindVar(name,i) then begin
-     exit(eltVar);
+     exit(idtVar);
   end;
   //busca como función
   if FindFunc(name,i) then begin
-     exit(eltFunc);
+     exit(idtFunc);
   end;
   //busca como constante
   if FindCons(name,i) then begin
-     exit(eltCons);
+     exit(idtCons);
   end;
   //no lo encuentra
-  exit(eltNone);
+  exit(idtNone);
 end;
 
 //Manejo de tipos
@@ -891,13 +890,13 @@ var
   r : TxpVar;
 begin
   //verifica nombre
-  if FindPredefName(varName) <> eltNone then begin
+  if FindPredefName(varName) <> idtNone then begin
     GenError('Identificador duplicado: "' + varName + '".');
     exit;
   end;
   //registra variable en la tabla
   r := TxpVar.Create;
-  r.name :=varName;
+  r.nom:=varName;
   r.typ := typ;   //fija  referencia a tipo
   vars.Add(r);
   //Ya encontró tipo, llama a evento
@@ -1169,8 +1168,6 @@ begin
   PErr.IniError;   //inicia motor de errores
   //Inicia lista de tipos
   typs := TTypes.Create(true);
-  //Crea arbol de elementos
-  TreeElems:= TXpTreeElements.Create;
   cons := TxpCons.Create(true);
   vars := TxpVars.Create(true);
   funcs := TxpFuns.Create(true);
@@ -1194,7 +1191,6 @@ begin
   funcs.Destroy;
   vars.Destroy;
   cons.Destroy;
-  TreeElems.Destroy;
   typs.Free;
   inherited Destroy;
 end;
@@ -1202,7 +1198,7 @@ end;
 { TOperand }
 function TOperand.VarName: string; inline;
 begin
-  Result := rvar.name;
+  Result := rvar.nom;
 end;
 function TOperand.addr: TVarAddr;
 begin
